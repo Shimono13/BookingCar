@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Page Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" type="text/css" media="screen" href="main.css" />
+    <script src="main.js"></script>
+  </head>
+  <body>
+    <div>
+      <label for="data1">Data Inizio</label>
+      <input type="date" id="data1" />
+    </div>
+    <div>
+      <label for="data2">Data fine</label>
+      <input type="date" id="data2" />
+    </div>
+    <button onclick="calcola()">Cliccami</button>
+
+    <script>
+      const data1 = document.getElementById("data1");
+      const data2 = document.getElementById("data2");
+
+      function calcola() {
+        const data1Milli = new Date(data1.value).getTime();
+        const data2Milli = new Date(data2.value).getTime();
+        if (data2Milli > data1Milli) {
+          const differenza = data2Milli - data1Milli;
+          console.log(differenza / (1000 * 60 * 60 * 24));
+        }
+      }
+    </script>
+  </body>
+</html>

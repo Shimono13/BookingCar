@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bombs</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f0f0;
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+
+      h1 {
+        font-size: 36px;
+        margin-bottom: 20px;
+      }
+
+      .info {
+        display: flex;
+        justify-content: space-between;
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 20px;
+      }
+
+      .info div {
+        flex-grow: 1;
+        margin-right: 10px;
+      }
+
+      .info div:last-child {
+        margin-right: 0;
+      }
+
+      label {
+        font-size: 18px;
+      }
+
+      input[type="number"] {
+        width: 100px;
+        padding: 5px;
+        font-size: 16px;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 18px;
+        cursor: pointer;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+      }
+
+      button:hover {
+        background-color: #45a049;
+      }
+
+      .container {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        width: 300px;
+        margin-bottom: 20px;
+      }
+
+      .cell {
+        width: 100%;
+        height: 60px;
+        border: 2px solid black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        cursor: pointer;
+        background-color: #ffffff;
+        transition: background-color 0.3s ease;
+      }
+
+      .cell:hover {
+        background-color: #eeeeee;
+      }
+
+      .info p {
+        font-size: 18px;
+        margin: 5px;
+      }
+
+      .info span {
+        font-weight: bold;
+      }
+
+      #newGameBtn,
+      #resetGameBtn {
+        display: inline-block;
+      }
+
+      #newGameBtn[disabled],
+      #resetGameBtn[disabled] {
+        display: none;
+      }
+
+      #extraFeatures {
+        margin-top: 20px;
+      }
+
+      #extraFeatures button {
+        margin-right: 10px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Bombs</h1>
+    <div class="info">
+      <div>
+        <label for="bet">Punta:</label>
+        <input type="number" id="bet" value="100" min="1" />
+      </div>
+      <div>
+        <label for="bombs">Numero di bombe:</label>
+        <input type="number" id="bombs" value="12" min="1" />
+      </div>
+      <div>
+        <p>Budget attuale: <span id="budget">1000.00</span> monete</p>
+        <p>Guadagno: <span id="win">0.00</span> monete</p>
+        <p>Puntata: <span id="betAmount">100.00</span> monete</p>
+        <p>Moltiplicatore: <span id="multiplier">1.00</span>x</p>
+      </div>
+    </div>
+    <div class="container" id="grid"></div>
+    <div class="info">
+      <button id="newGameBtn" onclick="startGame()">Nuovo Gioco</button>
+      <button id="resetGameBtn" onclick="resetGame()">Resetta Gioco</button>
+      <button onclick="cashout()">Cashout</button>
+    </div>
+
+    <div id="extraFeatures">
+      <button onclick="toggleSound()">Toggle Suono</button>
+    </div>
+
+    <audio id="moneySound" src="money_sound.mp3"></audio>
+    <audio id="bombSound" src="bomb_sound.mp3"></audio>
+
+    <script>
+      let grid = document.getElementById("grid");
+      let betInput = document.getElementById("bet");
+      let bombsInput = document.getElementById("bombs");
+      let betAmountDisplay = document.getElementById("betAmount");
+      let budgetDisplay = document.getElementById("budget");
+      let winDisplay = document.getElementById("win");
+      let multiplierDisplay = document.getElementById("multiplier");
+      let newGameBtn = document.getElementById("newGameBtn");
+      let resetGameBtn = document.getElementById("resetGameBtn");
+      let budget = 1000;
+      let win = 0;
+      let multiplier = 1;
+      let gameEnded = false;
+      let consecutiveWins = 0;
+      let multiplierIncrement = 0.1; // Incremento del moltiplicatore
+      let soundEnabled = true;
+      let moneySound = document.getElementById("moneySound");
+      let bombSound = document.getElementById("bombSound");
+
+      function startGame() {
+        let bet = parseInt(betInput.value);
+        let bombsCount = parseInt(bombsInput.value);
+        if (
+          isNaN(bet) ||
+          bet <= 0 ||
+          bet > budget ||
+          isNaN(bombsCount) ||
+          bombsCount <= 0
+        ) {
+          alert("Inserisci una puntata e un numero di bombe validi!");
+          return;
+        }
+        grid.innerHTML = "";
+        gameEnded = false;
+        win = 0;
+        multiplier = 1 + bombsCount / 20; // Moltiplicatore iniziale + incremento in base al numero di bombe
+        consecutiveWins = 0; // Resettiamo il conteggio delle vittorie consecutive
+        updateMultiplierDisplay();
+        updateWinDisplay();
+        updateBetAmountDisplay();
+        createGrid(bombsCount);
+        newGameBtn.disabled = true; // Disabilita il pulsante "Nuovo Gioco"
+        resetGameBtn.disabled = true; // Disabilita il pulsante "Resetta Gioco"
+      }
+
+      function resetGame() {
+        grid.innerHTML = "";
+        gameEnded = false;
+        win = 0;
+        multiplier = 1 + bombsInput.value / 20; // Moltiplicatore iniziale + incremento in base al numero di bombe
+        consecutiveWins = 0; // Resettiamo il conteggio delle vittorie consecutive
+        updateMultiplierDisplay();
+        updateWinDisplay();
+        updateBetAmountDisplay();
+        createGrid(parseInt(bombsInput.value));
+        newGameBtn.disabled = true; // Disabilita il pulsante "Nuovo Gioco"
+        resetGameBtn.disabled = true; // Disabilita il pulsante "Resetta Gioco"
+      }
+
+      function cashout() {
+        if (!gameEnded) {
+          budget += win + parseInt(betInput.value); // Aggiungi guadagno e scommessa originale al budget
+          updateBudgetDisplay();
+          alert(
+            "Hai effettuato il cashout! Il tuo budget attuale è: " +
+              budget.toFixed(2) +
+              " monete."
+          );
+          gameEnded = true;
+          newGameBtn.disabled = false; // Abilita il pulsante "Nuovo Gioco"
+          resetGameBtn.disabled = false; // Abilita il pulsante "Resetta Gioco"
+        }
+      }
+
+      function updateBudgetDisplay() {
+        budgetDisplay.textContent = budget.toFixed(2);
+      }
+
+      function updateWinDisplay() {
+        winDisplay.textContent = win.toFixed(2);
+      }
+
+      function updateBetAmountDisplay() {
+        betAmountDisplay.textContent = betInput.value;
+      }
+
+      function updateMultiplierDisplay() {
+        multiplierDisplay.textContent = parseFloat(multiplier).toFixed(2) + "x";
+      }
+
+      function createGrid(bombsCount) {
+        let cells = [];
+        // Create cells
+        for (let i = 0; i < 25; i++) {
+          let cell = document.createElement("div");
+          cell.classList.add("cell");
+          cell.setAttribute("data-index", i);
+          cell.addEventListener("click", () => revealCell(i));
+          cells.push(cell);
+          grid.appendChild(cell);
+        }
+        // Place bombs
+        let bombIndexes = [];
+        while (bombIndexes.length < bombsCount) {
+          let randomIndex = Math.floor(Math.random() * 25);
+          if (!bombIndexes.includes(randomIndex)) {
+            bombIndexes.push(randomIndex);
+          }
+        }
+        // Set bomb property
+        cells.forEach((cell, index) => {
+          cell.bomb = bombIndexes.includes(index);
+        });
+      }
+
+      function revealCell(index) {
+        if (gameEnded) return;
+        let cell = grid.querySelector(`.cell[data-index='${index}']`);
+        if (cell.bomb) {
+          // Rivelare tutte le bombe e i soldi
+          let cells = grid.getElementsByClassName("cell");
+          for (let cell of cells) {
+            if (cell.bomb) {
+              cell.innerText = "💣";
+              cell.style.backgroundColor = "red";
+            } else {
+              cell.innerText = "💰"; // Money bag emoji
+              cell.style.backgroundColor = "lightgreen";
+            }
+          }
+          gameOver();
+          playBombSound();
+        } else {
+          cell.innerText = "💰"; // Money bag emoji
+          cell.style.backgroundColor = "lightgreen";
+          win += parseInt(betInput.value) * multiplier; // Aggiorna il guadagno
+          updateWinDisplay();
+          consecutiveWins++; // Incrementiamo il numero di vittorie consecutive
+          checkWin();
+          updateMultiplier(); // Aggiorniamo il moltiplicatore
+          playMoneySound();
+        }
+      }
+
+      function gameOver() {
+        gameEnded = true;
+        budget -= parseInt(betInput.value);
+        updateBudgetDisplay();
+        alert(
+          "Hai perso! Il tuo budget attuale è: " +
+            budget.toFixed(2) +
+            ' monete. Premi "Resetta Gioco" per giocare di nuovo.'
+        );
+        newGameBtn.disabled = false; // Abilita il pulsante "Nuovo Gioco" dopo la fine del gioco
+        resetGameBtn.disabled = false; // Abilita il pulsante "Resetta Gioco" dopo la fine del gioco
+      }
+
+      function checkWin() {
+        let cells = grid.getElementsByClassName("cell");
+        let remainingCells = Array.from(cells).filter(
+          (cell) => !cell.bomb && cell.innerText !== "💰"
+        ).length;
+        if (remainingCells === 0) {
+          gameEnded = true;
+          budget += win + parseInt(betInput.value) * multiplier; // Aggiungi guadagno e scommessa originale al budget
+          updateBudgetDisplay();
+          updateMultiplier();
+          alert(
+            "Hai vinto! Il tuo budget attuale è: " +
+              budget.toFixed(2) +
+              ' monete. Premi "Resetta Gioco" per giocare di nuovo.'
+          );
+          newGameBtn.disabled = false; // Abilita il pulsante "Nuovo Gioco" dopo la vittoria
+          resetGameBtn.disabled = false; // Abilita il pulsante "Resetta Gioco" dopo la vittoria
+        }
+      }
+
+      function updateMultiplier() {
+        multiplier += bombsInput.value / 20; // Incremento proporzionale al numero di bombe
+        updateMultiplierDisplay();
+      }
+
+      function playMoneySound() {
+        if (soundEnabled) moneySound.play();
+      }
+
+      function playBombSound() {
+        if (soundEnabled) bombSound.play();
+      }
+
+      function toggleSound() {
+        soundEnabled = !soundEnabled;
+        let soundButton = document.querySelector("#extraFeatures button");
+        soundButton.textContent = soundEnabled
+          ? "Disattiva Suono"
+          : "Attiva Suono";
+      }
+    </script>
+  </body>
+</html>
